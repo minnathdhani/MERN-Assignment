@@ -3,6 +3,7 @@ pipeline {
 
     environment {
         REGISTRY = "minnathdhani"
+        DOCKER_BUILDKIT = "0"
         FRONTEND_IMAGE = "${REGISTRY}/mern-frontend"
         BACKEND_IMAGE = "${REGISTRY}/mern-backend"
     }
