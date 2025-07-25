@@ -2,39 +2,76 @@ pipeline {
     agent any
 
     environment {
-        DOCKER_IMAGE_FE = 'minnathdhani/frontend-image'
-        DOCKER_IMAGE_BE = 'minnathdhani/backend-image'
+        REGISTRY = "minnathdhani"
+        FRONTEND_IMAGE = "${REGISTRY}/mern-frontend"
+        BACKEND_IMAGE = "${REGISTRY}/mern-backend"
     }
 
     stages {
-        stage('Clone Repos') {
+        stage('Clone Repository') {
             steps {
-                git url: 'https://github.com/minnathdhani/MERN-Assignment.git', branch: 'main'
-                // do the same for backend in a separate workspace
+                git branch: 'main', url: 'https://github.com/minnathdhani/MERN-Assignment.git'
+                script {
+                    sh 'git rev-parse HEAD > .repo_commit'
+                    def changed = false
+
+                    if (fileExists('.repo_commit.old')) {
+                        def oldCommit = readFile('.repo_commit.old').trim()
+                        def newCommit = readFile('.repo_commit').trim()
+                        if (oldCommit != newCommit) {
+                            echo "Codebase has changed."
+                            changed = true
+                        }
+                    } else {
+                        changed = true
+                    }
+
+                    if (!changed) {
+                        echo "No changes detected. Skipping build."
+                        currentBuild.result = 'SUCCESS'
+                        error('Build skipped.')
+                    }
+                }
             }
         }
 
         stage('Build Docker Images') {
             steps {
-                sh 'docker build -t $DOCKER_IMAGE_FE ./frontend'
-                sh 'docker build -t $DOCKER_IMAGE_BE ./backend'
+                sh "docker build -t ${FRONTEND_IMAGE}:latest ./learnerReportCS_frontend"
+                sh "docker build -t ${BACKEND_IMAGE}:latest ./learnerReportCS_backend"
             }
         }
 
         stage('Push Docker Images') {
             steps {
-                withCredentials([usernamePassword(credentialsId: 'dockerhub-creds', passwordVariable: 'PASS', usernameVariable: 'USER')]) {
-                    sh 'echo $PASS | docker login -u $USER --password-stdin'
-                    sh 'docker push $DOCKER_IMAGE_FE'
-                    sh 'docker push $DOCKER_IMAGE_BE'
+                withCredentials([usernamePassword(credentialsId: 'dockerhub-creds', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
+                    sh """
+                        echo $PASSWORD | docker login -u $USERNAME --password-stdin
+                        docker push ${FRONTEND_IMAGE}:latest
+                        docker push ${BACKEND_IMAGE}:latest
+                    """
                 }
             }
         }
 
-        stage('Deploy with HELM') {
+        stage('Helm Deploy') {
             steps {
-                sh 'helm upgrade --install mern-release ./helm-chart --namespace mern --create-namespace'
+                sh """
+                    helm upgrade --install mern-app ./mern-chart \
+                      --namespace mern \
+                      --create-namespace \
+                      --values ./mern-chart/values.yaml
+                """
             }
+        }
+    }
+
+    post {
+        success {
+            sh 'cp .repo_commit .repo_commit.old || true'
+        }
+        always {
+            cleanWs()
         }
     }
 }

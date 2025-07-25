@@ -1,19 +1,26 @@
-# Default values for helm-chart.
+# Default values for mern-chart.
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 
 # This will set the replicaset count more information can be found here: https://kubernetes.io/docs/concepts/workloads/controllers/replicaset/
 replicaCount: 1
 
-# Custom configuration for microservices
+namespace: mern-app
+
 frontend:
-  image: minnathdhani/frontend-image
-  port: 3000
+  image: minnathdhani/mern-frontend:latest
+  containerPort: 3000
+  servicePort: 80
+  nodePort: 30080
 
 backend:
-  image: minnathdhani/backend-image
-  port: 5000
-  mongoUrl: mongodb://mongo:27017/mern_db
+  image: minnathdhani/mern-backend:latest
+  containerPort: 5000
+  servicePort: 5000
+  nodePort: 30500
+
+
+
 
 # This sets the container image more information can be found here: https://kubernetes.io/docs/concepts/containers/images/
 image:

@@ -1,5 +1,5 @@
 apiVersion: v2
-name: mern-deployment
+name: mern-app
 description: A Helm chart for MERN Stack
 
 # A chart can be either an 'application' or a 'library' chart.
