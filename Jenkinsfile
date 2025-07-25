@@ -37,7 +37,10 @@ pipeline {
 
         stage('Build Docker Images') {
             steps {
+                echo "Building frontend Docker image from ./learnerReportCS_frontend"
                 sh "docker build -t ${FRONTEND_IMAGE}:latest ./learnerReportCS_frontend"
+
+                echo "Building backend Docker image from ./learnerReportCS_backend"
                 sh "docker build -t ${BACKEND_IMAGE}:latest ./learnerReportCS_backend"
             }
         }
